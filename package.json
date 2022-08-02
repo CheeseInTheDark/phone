@@ -4,16 +4,23 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "mocha"
+    "test": "mocha --require test/setup.js"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "naudiodon": "^2.3.6",
+    "node-audiorecorder": "^3.0.0",
     "puppeteer": "^15.1.1"
   },
   "devDependencies": {
     "chai": "^4.3.6",
-    "mocha": "^10.0.0"
+    "chai-as-promised": "^7.1.1",
+    "mocha": "^10.0.0",
+    "node-wav": "^0.0.2",
+    "sinon": "^14.0.0",
+    "sinon-chai": "^3.7.0",
+    "sinon-chai-in-order": "^0.1.0",
+    "wav": "^1.0.2"
   }
 }
