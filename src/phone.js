@@ -36,42 +36,47 @@ function createDialWatcher() {
         () => debounce({
             condition: sample => sample > 0.95 * maxSampleValue,
             count: 40,
-            timeout: millisToSampleCount(3)
+            maxSamples: millisToSampleCount(15)
         }),
         () => signalWatcher({ 
             condition: sample => sample > 0.95 * maxSampleValue, 
             minSamples: millisToSampleCount(6), 
-            maxSamples: millisToSampleCount(13.5)
+            maxSamples: millisToSampleCount(35),
+            failureTolerance: millisToSampleCount(0.5)
         }),
         () => debounce({
             condition: sample => sample < 0.95 * maxSampleValue,
             count: 10,
-            timeout: millisToSampleCount(1)
+            maxSamples: millisToSampleCount(5)
         }),
         () => signalWatcher({
             condition: sample => sample < 0.95 * maxSampleValue && sample > 0.95 * minSampleValue,
-            minSamples: millisToSampleCount(56.5),
-            maxSamples: millisToSampleCount(68)
+            minSamples: millisToSampleCount(35),
+            maxSamples: millisToSampleCount(68),
+            failureTolerance: millisToSampleCount(2)
         }),
         () => debounce({
             condition: sample => sample < 0.95 * minSampleValue,
             count: 25,
-            timeout: millisToSampleCount(1)
+            maxSamples: millisToSampleCount(5)
         }),
         () => signalWatcher({
             condition: sample => sample < 0.95 * minSampleValue,
-            minSamples: millisToSampleCount(0.7),
-            maxSamples: millisToSampleCount(18)
+            minSamples: millisToSampleCount(1),
+            maxSamples: millisToSampleCount(25),
+            failureTolerance: millisToSampleCount(2)
         }),
-        () => {
-            pulses++
-            console.log("Made me a pulse", pulses)
-            return signalWatcher({
-                condition: sample => sample < 0.95 * maxSampleValue,
-                minSamples: millisToSampleCount(20),
-                maxSamples: millisToSampleCount(27)
-            })
-        }
+        () => debounce({
+            condition: sample => sample > 0.95 * minSampleValue,
+            count: 40,
+            maxSamples: millisToSampleCount(5)
+        }),
+        () => forMinSampleCount({
+            condition: sample => sample < 0.95 * maxSampleValue,
+            minSamples: millisToSampleCount(12),
+            maxSamples: millisToSampleCount(20),
+            failureTolerance: millisToSampleCount(1)
+        })
     ]
 
     let currentWatcher = steps[0]()
@@ -89,22 +94,21 @@ function createDialWatcher() {
             result ? currentStep++ : currentStep = 0
             
             if (currentStep === steps.length) {
+                if (result) pulses++
                 currentStep = 0
             }
-            console.log("Moving to step", currentStep, "result", result, "seconds", sampleCount/44100)
 
             currentWatcher = steps[currentStep]()
 
             if (!result) {
                 if (pulses > 0) {
-                    console.log("Returning dialed", pulses)
                     
                     toReturn = {
                         dialed: true,
                         number: pulses < 10 ? pulses : 0
                     }
                 }
-                console.log("Setting pulses to 0")
+
                 pulses = 0
             }
         }
@@ -115,14 +119,43 @@ function createDialWatcher() {
     return { read }
 }
 
-function signalWatcher({condition, minSamples, maxSamples}) {
+
+function forMinSampleCount({condition, minSamples, maxSamples, failureTolerance=0}) {
+    let failures = 0 
     let sampleCount = 0
 
     function read(sample) {
         sampleCount++
 
         const matched = condition(sample)
-        const failed = sampleCount > maxSamples || (!matched && sampleCount <= minSamples)
+
+        if (!matched) failures++
+
+        const failed = failures > failureTolerance && sampleCount < minSamples
+        const succeeded = (failures > failureTolerance && sampleCount >= minSamples) || sampleCount === maxSamples
+
+        
+        return failed ? false : succeeded ? true : undefined
+    }
+
+    return {
+        read
+    } 
+}
+
+
+function signalWatcher({condition, minSamples, maxSamples, failureTolerance = 0}) {
+    let failures = 0 
+    let sampleCount = 0
+
+    function read(sample) {
+        sampleCount++
+
+        const matched = condition(sample)
+        
+        if (!matched) failures++
+
+        const failed = sampleCount > maxSamples || (failures > failureTolerance && sampleCount < minSamples)
         const succeeded = !matched && sampleCount >= minSamples && sampleCount <= maxSamples
 
         

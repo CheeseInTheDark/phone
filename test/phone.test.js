@@ -1,94 +1,72 @@
 const fs = require('fs')
 const wav = require('wav')
-const { fake } = require('sinon')
+
 const { PassThrough } = require('stream')
 const expect = require('chai').expect;
 
 const Phone = require('../src/phone.js')
 const path = require('path');
-const { default: sinonChaiInOrder } = require('sinon-chai-in-order');
 
 
 describe("Phone", () => {
-    
-    it("reports nothing if no dialing happens", () => {
-        expect(5).to.equal(5)
-    })
-
     it("reports when a 1 is dialed", async () => {
-        const micStream = await wavFileToStream('1-dial.wav')
-        const dialListener = fake()
+        const { dialedNumbers } = await testPhoneInput('1-dial.wav')
 
-        Phone({
-            inStream: micStream,
-            onDial: dialListener
-        })
-
-        await new Promise(resolve => micStream.on("close", resolve))
-
-        expect(dialListener).to.have.been.calledOnceWith(1)
+        expect(dialedNumbers).to.have.members([1])
     })
 
     it("reports when a 3 is dialed", async() => {
-        const micStream = await wavFileToStream('3-dial.wav')
-        const dialListener = fake()
+        const { dialedNumbers } = await testPhoneInput('3-dial.wav')
 
-        Phone({
-            inStream: micStream,
-            onDial: dialListener
-        })
-
-        await new Promise(resolve => micStream.on("close", resolve))
-
-        expect(dialListener).to.have.been.calledOnceWith(3)
+        expect(dialedNumbers).to.have.members([3])
     })
 
     it("reports when a 6 is dialed", async() => {
-        const micStream = await wavFileToStream('6-dial.wav')
-        const dialListener = fake()
+        const { dialedNumbers } = await testPhoneInput('6-dial.wav')
 
-        Phone({
-            inStream: micStream,
-            onDial: dialListener
-        })
-
-        await new Promise(resolve => micStream.on("close", resolve))
-
-        expect(dialListener).to.have.been.calledOnceWith(6)
+        expect(dialedNumbers).to.have.members([6])
     })
 
     it("reports when a 0 is dialed", async() => {
-        const micStream = await wavFileToStream('0-dial.wav')
-        const dialListener = fake()
+        const { dialedNumbers } = await testPhoneInput('0-dial.wav')
 
-        Phone({
-            inStream: micStream,
-            onDial: dialListener
-        })
-
-        await new Promise(resolve => micStream.on("close", resolve))
-
-        expect(dialListener).to.have.been.calledOnceWith(0)
+        expect(dialedNumbers).to.have.members([0])
     })
 
     it("reports when the numbers 0 1 3 6 2 are dialed", async() => {
-        const micStream = await wavFileToStream('01362-dial.wav')
-        const dialListener = fake()
+        const { dialedNumbers } = await testPhoneInput('01362-dial.wav')
 
-        Phone({
-            inStream: micStream,
-            onDial: dialListener
-        })
+        expect(dialedNumbers).to.have.members([0, 1, 3, 6, 2])
+    })
 
-        await new Promise(resolve => micStream.on("close", resolve))
+    it("reports dialing 1-867-5309", async() => {
+        const { dialedNumbers } = await testPhoneInput('18675309-dial.wav')
 
-        expect(dialListener).inOrder.to.have.been.calledWith(0)
-            .subsequently.calledWith(1)
-            .subsequently.calledWith(3)
-            .subsequently.calledWith(6)
-            .subsequently.calledWith(2)
-    })    
+        expect(dialedNumbers).to.have.members([1, 8, 6, 7, 5, 3, 0, 9])
+    })
+
+    it("reports dialing 1-808-967-8866", async() => {
+        const { dialedNumbers } = await testPhoneInput('18089678866-dial.wav')
+
+        expect(dialedNumbers).to.have.members([1, 8, 0, 8, 9, 6, 7, 8, 8, 6, 6])
+    })
 })
+
+async function testPhoneInput(inputFilePath) {
+    const dialedNumbers = []
+    const micStream = await wavFileToStream(inputFilePath)
+
+    Phone({
+        inStream: micStream,
+        onDial: number => dialedNumbers.push(number)
+    })
+
+    await new Promise(resolve => micStream.on("close", resolve))
+
+    return {
+        dialedNumbers
+    }
+}
 
 async function wavFileToStream(filePath) {
     const fullPath = path.join(__dirname, filePath)
