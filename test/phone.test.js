@@ -50,6 +50,20 @@ describe("Phone", () => {
 
         expect(dialedNumbers).to.have.members([1, 8, 0, 8, 9, 6, 7, 8, 8, 6, 6])
     })
+
+    it("reports dialing 1's, 2's, and 3's mixed together", async() => {
+        const { dialedNumbers } = await testPhoneInput('112231122-dial.wav')
+
+        expect(dialedNumbers).to.have.members([1, 1, 2, 2, 3, 1, 1, 2, 2])
+    })
+
+    it("reports several 2's dialed in succession", async() => {
+        expectedNumbers = Array(29).fill(2)
+
+        const { dialedNumbers } = await testPhoneInput('29x2-dial.wav')
+
+        expect(dialedNumbers).to.have.members(expectedNumbers)
+    })
 })
 
 async function testPhoneInput(inputFilePath) {

@@ -28,31 +28,36 @@ function millisToSampleCount(milliseconds) {
 }
 
 function createDialWatcher() {
-    const file = fs.createWriteStream('debugstuff.txt')
     let pulses = 0
     let sampleCount = 0
 
     const steps = [
         () => debounce({
-            condition: sample => sample > 0.95 * maxSampleValue,
-            count: 40,
+            condition: sample => sample > 0.90 * maxSampleValue,
+            count: 5,
             maxSamples: millisToSampleCount(15)
         }),
         () => signalWatcher({ 
-            condition: sample => sample > 0.95 * maxSampleValue, 
-            minSamples: millisToSampleCount(6), 
-            maxSamples: millisToSampleCount(35),
-            failureTolerance: millisToSampleCount(0.5)
+            condition: sample => sample > 0.90 * maxSampleValue, 
+            minSamples: millisToSampleCount(1), 
+            maxSamples: millisToSampleCount(40),
+            failureTolerance: millisToSampleCount(3)
         }),
         () => debounce({
-            condition: sample => sample < 0.95 * maxSampleValue,
+            condition: sample => sample < 0.90 * maxSampleValue,
             count: 10,
-            maxSamples: millisToSampleCount(5)
+            maxSamples: millisToSampleCount(1)
         }),
         () => signalWatcher({
-            condition: sample => sample < 0.95 * maxSampleValue && sample > 0.95 * minSampleValue,
-            minSamples: millisToSampleCount(35),
-            maxSamples: millisToSampleCount(68),
+            condition: sample => sample < 0.90 * maxSampleValue && sample >= 0,
+            minSamples: millisToSampleCount(4),
+            maxSamples: millisToSampleCount(40),
+            failureTolerance: millisToSampleCount(2)
+        }),
+        () => signalWatcher({
+            condition: sample => sample < 0 * maxSampleValue && sample > 0.95 * minSampleValue,
+            minSamples: millisToSampleCount(30),
+            maxSamples: millisToSampleCount(60),
             failureTolerance: millisToSampleCount(2)
         }),
         () => debounce({
@@ -66,16 +71,11 @@ function createDialWatcher() {
             maxSamples: millisToSampleCount(25),
             failureTolerance: millisToSampleCount(2)
         }),
-        () => debounce({
-            condition: sample => sample > 0.95 * minSampleValue,
-            count: 40,
-            maxSamples: millisToSampleCount(5)
-        }),
         () => forMinSampleCount({
             condition: sample => sample < 0.95 * maxSampleValue,
             minSamples: millisToSampleCount(12),
             maxSamples: millisToSampleCount(20),
-            failureTolerance: millisToSampleCount(1)
+            failureTolerance: millisToSampleCount(2)
         })
     ]
 
@@ -94,7 +94,8 @@ function createDialWatcher() {
             result ? currentStep++ : currentStep = 0
             
             if (currentStep === steps.length) {
-                if (result) pulses++
+                if (result) pulses++ 
+                if (result) console.log("Pulses at " + sampleCount/ 44100, pulses)
                 currentStep = 0
             }
 
@@ -180,7 +181,7 @@ function debounce({condition, count, maxSamples}) {
 
         if (finished) return true
 
-        if (maxSamples && samplesRead > maxSamples) return false
+        if (maxSamples && samplesRead > maxSamples && goodSamples === 0) return false
     }
 
     return {
