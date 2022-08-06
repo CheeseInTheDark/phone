@@ -64,21 +64,42 @@ describe("Phone", () => {
 
         expect(dialedNumbers).to.have.members(expectedNumbers)
     })
+
+    it("reports off-hook states when the phone starts on hook", async() => {
+        const { offHookStates } = await testPhoneInput('off-hooks.wav')
+
+        expect(offHookStates).to.have.members([false, true, false, true, false, true, false, true, false, true, false, true, false])
+    })
+
+    it("reports off-hook states when the phone starts off hook", async() => {
+        const { offHookStates } = await testPhoneInput('off-hooks-starting-off.wav')
+
+        expect(offHookStates).to.have.members([true, false, true, false, true, false, true, false, true, false, true, false])
+    })
+
+    it("does not misreport other noise as off-hook states", async() => {
+        const { offHookStates } = await testPhoneInput('off-hooks-and-dials.wav')
+
+        expect(offHookStates).to.have.members([true, false, true, false, true, false, true, false, true, false])
+    })
 })
 
 async function testPhoneInput(inputFilePath) {
     const dialedNumbers = []
+    const hookStates = []
     const micStream = await wavFileToStream(inputFilePath)
 
     Phone({
         inStream: micStream,
-        onDial: number => dialedNumbers.push(number)
+        onDial: number => dialedNumbers.push(number),
+        onHookStateChanged: offHookState => hookStates.push(offHookState)
     })
 
     await new Promise(resolve => micStream.on("close", resolve))
 
     return {
-        dialedNumbers
+        dialedNumbers,
+        offHookStates: hookStates
     }
 }
 

@@ -1,15 +1,22 @@
 const { chunkedBuffer } = require('./buffer')
+const millisToSampleCount = require('./time-conversions')
+
+const createHookStateWatcher = require('./hook-state-watcher')
+
+const debounce = require('./signal-matchers/debounce')
+const atLeastNSamples = require('./signal-matchers/at-least-n-samples')
+const signalWatcher = require('./signal-matchers/signal-watcher')
 
 const maxSampleValue = Math.pow(2, 15) - 1
 const minSampleValue = -Math.pow(2, 15)
 
-const fs = require('fs')
 
-module.exports = function Phone({ inStream, onDial }) {
+module.exports = function Phone({ inStream, onDial, onHookStateChanged }) {
   
     inStream.on("data", readBuffer)
 
     const dialWatcher = createDialWatcher()
+    const hookStateWatcher = createHookStateWatcher()
 
     function readBuffer(data) {
         chunkedBuffer(data, 2).forEach(bytes => {
@@ -19,17 +26,17 @@ module.exports = function Phone({ inStream, onDial }) {
             if (dialResult.dialed) {
                 onDial(dialResult.number)
             }
+
+            const offHookResult = hookStateWatcher.read(sample)
+            if (offHookResult.hookStateChanged) {
+                onHookStateChanged(offHookResult.hookState)
+            }
         })
     }
 }
 
-function millisToSampleCount(milliseconds) {
-    return Math.ceil(44100 * milliseconds / 1000)
-}
-
 function createDialWatcher() {
     let pulses = 0
-    let sampleCount = 0
 
     const steps = [
         () => debounce({
@@ -71,7 +78,7 @@ function createDialWatcher() {
             maxSamples: millisToSampleCount(25),
             failureTolerance: millisToSampleCount(2)
         }),
-        () => forMinSampleCount({
+        () => atLeastNSamples({
             condition: sample => sample < 0.95 * maxSampleValue,
             minSamples: millisToSampleCount(12),
             maxSamples: millisToSampleCount(20),
@@ -83,11 +90,9 @@ function createDialWatcher() {
     let currentStep = 0
 
     function read(sample) {
-        sampleCount++
         const result = currentWatcher.read(sample)
         let toReturn = {
-            dialed: false,
-            number: undefined
+            dialed: false
         }
     
         if (result !== undefined) {
@@ -95,7 +100,6 @@ function createDialWatcher() {
             
             if (currentStep === steps.length) {
                 if (result) pulses++ 
-                if (result) console.log("Pulses at " + sampleCount/ 44100, pulses)
                 currentStep = 0
             }
 
@@ -119,73 +123,3 @@ function createDialWatcher() {
 
     return { read }
 }
-
-
-function forMinSampleCount({condition, minSamples, maxSamples, failureTolerance=0}) {
-    let failures = 0 
-    let sampleCount = 0
-
-    function read(sample) {
-        sampleCount++
-
-        const matched = condition(sample)
-
-        if (!matched) failures++
-
-        const failed = failures > failureTolerance && sampleCount < minSamples
-        const succeeded = (failures > failureTolerance && sampleCount >= minSamples) || sampleCount === maxSamples
-
-        
-        return failed ? false : succeeded ? true : undefined
-    }
-
-    return {
-        read
-    } 
-}
-
-
-function signalWatcher({condition, minSamples, maxSamples, failureTolerance = 0}) {
-    let failures = 0 
-    let sampleCount = 0
-
-    function read(sample) {
-        sampleCount++
-
-        const matched = condition(sample)
-        
-        if (!matched) failures++
-
-        const failed = sampleCount > maxSamples || (failures > failureTolerance && sampleCount < minSamples)
-        const succeeded = !matched && sampleCount >= minSamples && sampleCount <= maxSamples
-
-        
-        return failed ? false : succeeded ? true : undefined
-    }
-
-    return {
-        read
-    }
-}
-
-function debounce({condition, count, maxSamples}) {
-    let goodSamples = 0
-    let samplesRead = 0
-
-    let finished = false
-
-    function read(sample) {
-        samplesRead ++
-        condition(sample) ? goodSamples++ : goodSamples = 0
-        finished = goodSamples == count
-
-        if (finished) return true
-
-        if (maxSamples && samplesRead > maxSamples && goodSamples === 0) return false
-    }
-
-    return {
-        read
-    }
-}
-
