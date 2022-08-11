@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8"></head><body><input type="hidden" id="nonce" value="38.114.130.51.91.189.5.136.228.192.119.40.53.118.31.83"><script nonce="wknxWg1hjvLdgBnXGVIc0g">/*
+
+ Copyright The Closure Library Authors.
+ SPDX-License-Identifier: Apache-2.0
+*/
+var f=function(){for(var b=Number(this),a=[],c=b;c<arguments.length;c++)a[c-b]=arguments[c];return a},h=this||self,k=function(b){return b};/*
+
+ SPDX-License-Identifier: Apache-2.0
+*/
+var l;var m={},n=function(b,a){this.g=a===m?b:""};n.prototype.toString=function(){return this.g.toString()};var p=function(b){return b instanceof n&&b.constructor===n?b.g:"type_error:SafeScript"},q=function(b){if(void 0===l){var a=null;var c=h.trustedTypes;if(c&&c.createPolicy)try{a=c.createPolicy("goog#html",{createHTML:k,createScript:k,createScriptURL:k})}catch(d){h.console&&h.console.error(d.message)}l=a}b=(a=l)?a.createScript(b):b;return new n(b,m)};function r(b,a){b.textContent=p(a);var c,d;(c=(a=null==(d=(c=(b.ownerDocument&&b.ownerDocument.defaultView||window).document).querySelector)?void 0:d.call(c,"script[nonce]"))?a.nonce||a.getAttribute("nonce")||"":"")&&b.setAttribute("nonce",c)};var t=function(b){var a=f.apply(1,arguments),c,d;"evalCspCompatiblyData"in window||(window.evalCspCompatiblyData={index:0});var e=window.evalCspCompatiblyData.index++;window.evalCspCompatiblyData[e]={args:a,callback:function(g,u){c=g;d=u}};a=document.createElement("script");a.async=!1;a.setAttribute("data-index",e);e=q('"use strict";\v(function(){var idx=parseInt((document.currentScript||Array.prototype.slice.call(document.querySelectorAll("head script[data-index]"),-1)[0]).getAttribute("data-index"),10),curEvalData=evalCspCompatiblyData[idx];delete evalCspCompatiblyData[idx];(function(){var callback=curEvalData.callback;try{callback(true,('+
+String(p(b))+"\n));}catch(ex){callback(false, ex);}}).apply(this, curEvalData.args);})()");r(a,e);e=function(g){c=!1;d=g.error||g};window.addEventListener("error",e);document.head.appendChild(a);window.removeEventListener("error",e);document.head.removeChild(a);if(!c)throw d;return d};var v=document.getElementById("nonce"),w=v?v.value:(new URL(location.href)).searchParams.get("nonce");function x(){if(self.origin)return"null"==self.origin;if(""!=location.host)return!1;try{return window.parent.escape(""),!1}catch(b){return!0}}
+(function(){if(!x())throw"sandboxing error";var b=new MessageChannel;b.port1.onmessage=function(a){try{var c=t.apply(null,[q("(function("+a.data.paramNames.join(", ")+") {\n"+a.data.code+"\n}).apply(null, arguments)")].concat(a.data.values));a.ports[0].postMessage({result:c})}catch(d){a.ports[0].postMessage({error:d.toString()})}};window.parent.postMessage(w,"*",[b.port2])})();
+</script></body></html>

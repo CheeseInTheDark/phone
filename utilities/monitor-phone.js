@@ -14,14 +14,14 @@ let audioRecorder = new AudioRecorder({
 }, console)
 
 
-const Phone = require('./src/phone')
+const Phone = require('../src/phone')
 
 audioRecorder.start().stream().pipe(audioStream)
 
 Phone({
     inStream: audioStream,
     onDial: console.log,
-    onHookStateChanged: () => {}
+    onHookStateChanged: (isOffHook) => console.log(isOffHook ? "Off hook" : "On hook")
 })
 
 process.stdin.resume();

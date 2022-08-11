@@ -60,7 +60,7 @@ function onHookWatcher() {
         }),
         () => debounce({ 
             condition: noSignalCondition, 
-            count: millisToSampleCount(15),
+            count: millisToSampleCount(100),
             maxSamples: millisToSampleCount(385),
 
         }),
@@ -95,4 +95,4 @@ const createInitialOnHookWatcher = () => atLeastNSamples({
     maxSamples: millisToSampleCount(1000)
 })
 
-const noSignalCondition = sample => sample > minSampleValue * 0.01 && sample < maxSampleValue * 0.01
+const noSignalCondition = sample => sample > minSampleValue * 0.009 && sample < maxSampleValue * 0.009

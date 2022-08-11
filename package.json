@@ -4,20 +4,22 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "mocha --require test/setup.js"
+    "test": "mocha --require test/setup.js --timeout 30000"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "naudiodon": "^2.3.6",
     "node-audiorecorder": "^3.0.0",
-    "puppeteer": "^15.1.1"
+    "puppeteer-extra": "^3.3.4",
+    "puppeteer-extra-plugin-stealth": "^2.11.1"
   },
   "devDependencies": {
     "chai": "^4.3.6",
     "chai-as-promised": "^7.1.1",
     "mocha": "^10.0.0",
     "node-wav": "^0.0.2",
+    "puppeteer": "^15.1.1",
     "sinon": "^14.0.0",
     "sinon-chai": "^3.7.0",
     "sinon-chai-in-order": "^0.1.0",
